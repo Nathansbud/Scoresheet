@@ -39,6 +39,12 @@ th input[type="text"], td input[type="text"], td input[type="number"]{
     overflow: auto;
 }
 
+iframe {
+    position: relative;
+    height: 100%;
+    width: 100%; 
+}
+
 
 h1 {
     text-align: center;

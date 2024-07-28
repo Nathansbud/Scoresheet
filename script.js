@@ -1,14 +1,29 @@
-const rounds = ["2G", "1G 1R", "2R", "3G", "2G 1R", "2R 1G", "4G", "3R"]
-let playerCount = 5;
+class Game {
+    constructor(min, max, rounds, hasRules = false) {
+        this.minimumPlayers = min
+        this.maximumPlayers = max
+        this.rounds = rounds
+        this.hasRules = hasRules
+    }
+}
 
+const Games = {
+    DEFAULT: new Game(null, null, null, false),
+    INTERNATIONAL: new Game(2, 5, ["2G", "1G 1R", "2R", "3G", "2G 1R", "2R 1G", "4G", "3R"], true),
+    CAMBIO: new Game(null, null, null, false)
+}
+
+let activeGame = Games.INTERNATIONAL
+
+let playerCount = 5;
 const scoresheet = document.getElementById("scoresheet");
 const playerChanger = document.getElementById("player_count");
+const rulesFrame = document.getElementById("rules_frame");
 
 window.onload = function() {
     setupScoresheet();
     setupListeners();
-    
-    changePlayers(3)
+    changePlayers(3);
     updatePlayerNames();
 }
 
@@ -33,7 +48,7 @@ playerChanger.addEventListener("change", (e) => {
 })
 
 function setupScoresheet() {
-    for(let i = 0; i < rounds.length; i++) {
+    for(let i = 0; i < activeGame.rounds.length; i++) {
         let newRound = document.createElement("tr")
         newRound.setAttribute("id", "round_"+(i+1))
         newRound.setAttribute("class", "round")
@@ -42,7 +57,7 @@ function setupScoresheet() {
         roundCell.setAttribute("class", "round_name")
         
         let cardCount = 0
-        let cardParts = rounds[i].split(' ')
+        let cardParts = activeGame.rounds[i].split(' ')
         for(let p = 0; p < cardParts.length; p++) {
             if(cardParts[p][1] == "G") {
                 cardCount += 3 * parseInt(cardParts[p][0])
@@ -51,7 +66,7 @@ function setupScoresheet() {
             }
         }
 
-        roundCell.innerHTML = rounds[i] + " (" + ((cardCount < 10) ? (10) : cardCount) + ")"
+        roundCell.innerHTML = activeGame.rounds[i] + " (" + ((cardCount < 10) ? (10) : cardCount) + ")"
         newRound.appendChild(roundCell)
         
         let playerCells = []
@@ -87,6 +102,8 @@ function setupScoresheet() {
 
     scoresheet.style.width = "100%";
     scoresheet.style.height = "100%";
+
+    rulesFrame.src = "rules/international.html"
 }
 
 function updatePlayerNames() {
@@ -122,7 +139,7 @@ function changePlayers(count) {
 
 function setupListeners() {
     document.getElementById('rules_text').style.display = 'none';
-    for(let i = 0; i < rounds.length; i++) {
+    for(let i = 0; i < activeGame.rounds.length; i++) {
         for(let j = 0; j < playerCount; j++) {
             document.getElementById("p"+(j+1)+"_r"+(i+1)+"_score").addEventListener("change", function() {
                 let scores = document.getElementsByClassName("p"+(j+1)+"_scores")
