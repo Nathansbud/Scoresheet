@@ -13,7 +13,7 @@ const Games = {
     CAMBIO: new Game(null, null, null, false)
 }
 
-let activeGame = Games.INTERNATIONAL
+let activeGame = null
 let playerCount = 0;
 
 const scoresheet = document.getElementById("scoresheet");
@@ -22,10 +22,8 @@ const gameChanger = document.getElementById("active_game");
 const rulesFrame = document.getElementById("rules_frame");
 
 window.onload = function() {
-    updateActiveGame(Games.CUSTOM);
-    setupScoresheet();
-    setupListeners();
-    updatePlayerNames();
+    gameChanger.value = "international"
+    updateActiveGame(Games.INTERNATIONAL);  
 }
 
 function updateActiveGame(game) {
@@ -46,8 +44,9 @@ function updateActiveGame(game) {
 
     playerChanger.min = Math.max(activeGame.minimumPlayers, 1)
     playerChanger.max = activeGame.maximumPlayers
-
-    changePlayers(playerCount)
+    
+    setupPlayers(playerCount)
+    setupScoresheet()
 }
 
 gameChanger.addEventListener("change", (e) => {
@@ -71,9 +70,27 @@ playerChanger.addEventListener("change", (e) => {
         proposed = boundedMin;
     }
     
-    // changePlayers(proposed);
+    setupPlayers(proposed);
     // updatePlayerNames();
 })
+
+function setupPlayers(count) {
+    if(count == playerCount) { return }
+
+    console.log("swag")
+}
+
+
+
+
+function setupScoresheet() {
+    
+    
+    
+
+
+
+}
 
 
 
