@@ -1,0 +1,46 @@
+body {
+    background-color: #E3E3E3;
+}
+
+table#scoresheet {
+    table-layout: fixed;
+    border-collapse: collapse;
+    border: 2px solid black;
+    text-align: center;
+}
+
+
+th, td {
+    border: 1px solid black;
+}
+
+th input[type="text"], td input[type="text"], td input[type="number"]{
+    text-align: center;
+    min-width: 10%;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+}
+
+#rules_text {
+    background: white;
+    display: none;
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    right: 5%;
+    top: 2.5%;
+    bottom: 2.5%;
+    height: 92.5%;
+    width: 75%;
+    z-index: 1;
+    padding: 0px 10px;
+    border: 2px solid black;
+    overflow: auto;
+}
+
+
+h1 {
+    text-align: center;
+    text-decoration: underline;
+}
