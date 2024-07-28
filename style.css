@@ -45,6 +45,10 @@ iframe {
     width: 100%; 
 }
 
+#player_header * {
+    margin-right: 50px;
+
+}
 
 h1 {
     text-align: center;

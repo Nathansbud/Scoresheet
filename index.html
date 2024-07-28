@@ -10,15 +10,28 @@
         <thead>
             <tr>
                 <th rowspan="2">Round</th>
-                <th id="player_header" colspan="3">Players: <input type="number" id="player_count" value="3" min="3" step="1" max="5"/></th>
                 <th rowspan="2">Deal</th>
+                <th id="player_header">
+                    <span>
+                        Game: 
+                        <select id="active_game">
+                            <option selected>Custom</option>
+                            <option>International</option>
+                            <option>Cambio</option>
+                        </select>
+                    </span>
+                    <span>
+                        Players: 
+                        <input type="number" id="player_count" step="1" max="5"/>
+                    </span>
+                    <span>
+                        Rounds: 
+                        <input type="number" id="round_count" value="10" min="1" step="1" max="100"/>
+                    </span>
+                </th>
             </tr>
-            <tr>
-                <th id="player_1" data-players="1"><input class="player_name" id="p1_name" type="text" value="Player 1"/></th>
-                <th id="player_2" data-players="2"><input class="player_name" id="p2_name" type="text" value="Player 2"/></th>
-                <th id="player_3" data-players="3"><input class="player_name" id="p3_name" type="text" value="Player 3"/></th>
-                <th id="player_4" data-players="4"><input class="player_name" id="p4_name" type="text" value="Player 4"/></th>
-                <th id="player_5" data-players="5"><input class="player_name" id="p5_name" type="text" value="Player 5"/></th>
+            <tr id="player_header">
+                
             </tr>
         </thead>
     </table>
