@@ -1,217 +1,193 @@
-class Game {
-    constructor(min, max, rounds, hasRules = false) {
-        this.minimumPlayers = min ?? Number.NEGATIVE_INFINITY
-        this.maximumPlayers = max ?? Number.POSITIVE_INFINITY
-        this.rounds = rounds ?? [...Array(10).keys()]
+const activeTable = document.getElementById("scoresheet")
+const rulesText = document.getElementById("rules_text")
+const rulesFrame = document.getElementById("rules_frame")
+
+class Player {
+    constructor(name) {
+        self.name = name
+    }
+}
+
+class GameConfig { 
+    constructor(
+        title="",
+        minPlayerCount = 1, 
+        maxPlayerCount = 10, 
+        fixedRounds = false,
+        hasRules = false,
+        scoreIncrement = 1
+    ) {
+        this.title = title
         this.hasRules = hasRules
+
+        // Relevant for things like International, which go up by 5 minimum each card
+        this.scoreIncrement = scoreIncrement
+        this.fixedRounds = fixedRounds
+
+        this.minPlayerCount = minPlayerCount
+        this.maxPlayerCount = maxPlayerCount
     }
 }
 
-const Games = {
-    CUSTOM: new Game(null, null, null, false),
-    INTERNATIONAL: new Game(2, 5, ["2G", "1G 1R", "2R", "3G", "2G 1R", "2R 1G", "4G", "3R"], true),
-    CAMBIO: new Game(null, null, null, false)
-}
+class Game { 
+    constructor(players, configuration) {
+        this.configuration = configuration
 
-let activeGame = null
-let playerCount = 0;
-
-const scoresheet = document.getElementById("scoresheet");
-const playerChanger = document.getElementById("player_count");
-const gameChanger = document.getElementById("active_game");
-const rulesFrame = document.getElementById("rules_frame");
-
-window.onload = function() {
-    gameChanger.value = "international"
-    updateActiveGame(Games.INTERNATIONAL);  
-}
-
-function updateActiveGame(game) {
-    let oldActive = activeGame
-    activeGame = game
-
-    let [minPlayers, maxPlayers] = [
-        activeGame.minimumPlayers, 
-        activeGame.maximumPlayers
-    ]
-
-    // Update player count based on required player count for this game if invalid
-    if(playerCount < minPlayers) {
-        playerCount = minPlayers
-    } else if(playerCount > maxPlayers) {
-        playerCount = maxPlayers
+        this.players = players 
+        this.playerCount = 3
+        
+        this.rounds = 10
+      
+        this.scores = players.map(_ => Array(this.rounds).map(_ => 0))
     }
 
-    playerChanger.min = Math.max(activeGame.minimumPlayers, 1)
-    playerChanger.max = activeGame.maximumPlayers
-    
-    setupPlayers(playerCount)
-    setupScoresheet()
-}
-
-gameChanger.addEventListener("change", (e) => {
-    const selectedValue = e.target.value.toUpperCase()
-    updateActiveGame(Games[selectedValue])
-})
-
-playerChanger.addEventListener("change", (e) => {
-    let proposed = Math.floor(parseInt(e.target.value));
-    let boundedMin = Math.max(1, activeGame.minimumPlayers) 
-
-    if(Number.isNaN(proposed)) {
-        playerChanger.value = playerCount;
-        proposed = playerCount;
-        return;
-    } else if(proposed > activeGame.maximumPlayers) {
-        playerChanger.value = activeGame.maximumPlayers;
-        proposed = activeGame.maximumPlayers;
-    } else if(proposed < boundedMin) {
-        playerChanger.value = boundedMin;
-        proposed = boundedMin;
+    updateConfiguration(configuration) {
+        this.configuration = configuration
     }
-    
-    setupPlayers(proposed);
-    // updatePlayerNames();
-})
-
-function setupPlayers(count) {
-    if(count == playerCount) { return }
-
-    console.log("swag")
 }
 
-
-
-
-function setupScoresheet() {
-    
-    
-    
-
-
-
+const GameConfigurations = {
+    "Custom": new GameConfig("Custom"),
+    "International": new GameConfig(
+        title="International",
+        minPlayerCount=1,
+        maxPlayerCount=5,
+        fixedRounds=true,
+        hasRules=true,
+        scoreIncrement=5
+    ),
+    "Cambio": new GameConfig(
+        title="Cambio",
+        minPlayerCount=3,
+        maxPlayerCount=10,
+        fixedRounds=false,
+        hasRules=true,
+        scoreIncrement=1
+    ),
+}
+const activeGame = new Game(["Player 1", "Player 2", "Player 3"], GameConfigurations.Custom)
+function createTableCell(textContent=null, header=false) {
+    let cell = document.createElement(header ? "th" : "td")
+    if(textContent) {
+        cell.textContent = textContent
+    }
+    return cell
 }
 
-
-
-// function setupScoresheet() {
-//     for(let i = 0; i < activeGame.rounds.length; i++) {
-//         let newRound = document.createElement("tr")
-//         newRound.setAttribute("id", "round_"+(i+1))
-//         newRound.setAttribute("class", "round")
-        
-//         let roundCell = document.createElement("td")
-//         roundCell.setAttribute("class", "round_name")
-        
-//         if(activeGame == Games.INTERNATIONAL) {
-//             let cardCount = 0
-//             let cardParts = activeGame.rounds[i].split(' ')
-//             for(let p = 0; p < cardParts.length; p++) {
-//                 if(cardParts[p][1] == "G") {
-//                     cardCount += 3 * parseInt(cardParts[p][0])
-//                 } else {
-//                     cardCount += 4 * parseInt(cardParts[p][0])
-//                 }
-//             }
-
-//             roundCell.innerHTML = activeGame.rounds[i] + " (" + ((cardCount < 10) ? (10) : cardCount) + ")"
-//         }
-//         newRound.appendChild(roundCell)
-        
-//         let playerCells = []
-//         for(let j = 0; j < playerCount; j++) {
-//             playerCells[j] = document.createElement("td")
-//             playerCells[j].innerHTML = '<input type="number" min=0 step=5 class="p'+(j+1)+'_scores" id="p'+(j+1)+'_r'+(i+1)+'_score">'
-//             newRound.appendChild(playerCells[j])
-//         }
-
-//         let dealCell = document.createElement("td")
-//         dealCell.setAttribute("class", "player_deal")
-//         newRound.append(dealCell)
-
-//         scoresheet.appendChild(newRound)
-//     }
-//     let finalRow = document.createElement("tr")
+function generateScoresheet(gameState) {
+    // Clear out our existing table
+    activeTable.innerHTML = ""
     
-//     let finalCellLabel = document.createElement("td")
-//     finalCellLabel.textContent = "Total"
-//     finalRow.appendChild(finalCellLabel)
+    // Create table header
+    let headerRow = activeTable.insertRow(-1)
+    
+    // Create relevant header rows
+    let [roundHeader, playerHeader, dealHeader] = ["Round", "Players: ", "Deal"].map(v => 
+        createTableCell(v, header=true)
+    )
 
-//     for(let i = 0; i < playerCount; i++) {
-//         let finalCellScore = document.createElement("td")
-//         finalCellScore.innerHTML = "<span class='final_scores' id='p"+(i+1)+"_final'>0</span>"
-//         finalRow.appendChild(finalCellScore)
-//     }
+    // Create input for player count
+    let playerCountInput = document.createElement("input")
+    playerCountInput.type = "number"
+    playerCountInput.min = gameState.configuration.minPlayerCount
+    playerCountInput.max = gameState.configuration.maxPlayerCount
+    playerCountInput.value = gameState.playerCount
 
-//     let ruleCell = document.createElement("td")
-//     ruleCell.innerHTML = "<button id='rules'>Rules</button>" 
-//     finalRow.appendChild(ruleCell)
+    playerHeader.appendChild(playerCountInput)
 
-//     scoresheet.append(finalRow)
+    roundHeader.rowSpan = 2
+    dealHeader.rowSpan = 2
+    
+    headerRow.append(roundHeader, playerHeader, dealHeader)
 
-//     scoresheet.style.width = "100%";
-//     scoresheet.style.height = "100%";
+    // Configure player names
+    let headerSubrow = activeTable.insertRow(-1)
+    headerSubrow.id = "player_header"
 
-//     rulesFrame.src = "rules/international.html"
-// }
+    let playerCells = gameState.players.map(v => createTableCell(v, header=true))
+    playerHeader.colSpan = playerCells.length
 
-// function updatePlayerNames() {
-//     let dealCells = document.getElementsByClassName("player_deal")
-//     for(let i = 0; i < dealCells.length; i++) {
-//         dealCells[i].innerHTML = document.getElementById("p"+((i%playerCount)+1)+"_name").value
-//     }
-// }
+    headerSubrow.append(...playerCells)
+    
+    // Create game rounds
+    for(let i = 0; i < gameState.rounds; i++) {
+        let newRow = activeTable.insertRow(-1)
+        newRow.insertCell(-1).textContent = `${i + 1}`
+        gameState.players.map((_, p) => {
+            let scoreCell = newRow.insertCell(-1)
 
-// function changePlayers(count) {
-//     let fourCells = document.querySelectorAll("#scoresheet tr > td:nth-child(5)");
-//     let fiveCells = document.querySelectorAll("#scoresheet tr > td:nth-child(6)");
-//     switch(count) {
-//         case 5:
-//             Array.from(fourCells).forEach(c => c.style.display = "table-cell");
-//             Array.from(fiveCells).forEach(c => c.style.display = "table-cell");
-//             break;
-//         case 4:
-//             Array.from(fourCells).forEach(c => c.style.display = "table-cell");
-//             Array.from(fiveCells).forEach(c => c.style.display = "none");
-//             break;
-//         case 3:
-//             Array.from(fourCells).forEach(c => c.style.display = "none");
-//             Array.from(fiveCells).forEach(c => c.style.display = "none");
-//             break;
-//     }
+            let inputCell = document.createElement("input")
+            inputCell.type = "number"
+            // inputCell.value = 0
+            inputCell.step = gameState.configuration.scoreIncrement
+            inputCell.className = `player_${p}_score_cell`
+            inputCell.id = `player_${p}_score_cell_${i}`
+            inputCell.onchange = (event) => {
+                activeGame.scores[p][i] = Number(event.target.value)
+                document.getElementById(`player_${p}_sum_cell`).textContent = activeGame.scores[
+                    p
+                ].reduce((acc, curr) => acc + curr, 0)
+            }
 
-//     document.getElementById("player_header").setAttribute("colspan", count);
-//     document.getElementById("player_4").style.display = count > 3 ? "table-cell" : "none";
-//     document.getElementById("player_5").style.display = count > 4 ? "table-cell" : "none";
-//     playerCount = count;
-// }
+            scoreCell.appendChild(inputCell)
+        })
+        
+        newRow.insertCell(-1).textContent = gameState.players[i % gameState.players.length]
+    }
 
-// function setupListeners() {
-//     document.getElementById('rules_text').style.display = 'none';
-//     for(let i = 0; i < activeGame.rounds.length; i++) {
-//         for(let j = 0; j < playerCount; j++) {
-//             document.getElementById("p"+(j+1)+"_r"+(i+1)+"_score").addEventListener("change", function() {
-//                 let scores = document.getElementsByClassName("p"+(j+1)+"_scores")
-//                 let score = 0
+    // Configure score total row
+    const totalsRow = activeTable.insertRow(-1)
+    let totalCell = totalsRow.insertCell(-1)
+    
+    gameState.players.map((_, i) => {
+        let playerCell = totalsRow.insertCell(-1)
+        playerCell.textContent = 0
+        playerCell.className = "sum_cell"
+        playerCell.id = `player_${i}_sum_cell`
+        playerCell.dataset.player = i
+    })
+    
+    let rulesCell = totalsRow.insertCell(-1)
+    let gameCell = document.createElement("select")
+    gameCell.append(...Object.keys(GameConfigurations).map(v => {
+        let opt = document.createElement("option")
+        opt.text = v
+        opt.value = v
+        return opt
+    }))
 
-//                 for(let k = 0; k < scores.length; k++) {
-//                     if(scores[k].value) score += parseInt(scores[k].value, 10)
-//                 }
-                
-//                 document.getElementById("p"+(j+1)+"_final").innerHTML = score
-//             })
-//         }
-//     }
+    gameCell.selectedIndex = Object.keys(GameConfigurations).indexOf(gameState.configuration.title)
+    gameCell.onchange = (event) => {
+        rulesText.style.display = "none"
+        gameState.updateConfiguration(GameConfigurations[event.target.value])
+        generateScoresheet(gameState)
+    }
 
-//     for(let i = 0; i < document.getElementsByClassName("player_name").length; i++) {
-//         document.getElementsByClassName("player_name")[i].addEventListener('change', updatePlayerNames)  
-//     }
-//     document.getElementById('rules').addEventListener('click', function() {
-//        if(document.getElementById('rules_text').style.display == 'none') {
-//             document.getElementById('rules_text').style.display = 'inline';
-//         } else {
-//             document.getElementById('rules_text').style.display = 'none'; 
-//         }
-//     })
-// }
+    rulesCell.append(gameCell)
+    if(gameState.configuration.hasRules) {
+        let rulesButton = document.createElement("button")
+        rulesButton.textContent = "Rules"
+        rulesButton.onclick = (_) => {
+            if(rulesText.style.display  == 'none') {
+                rulesText.style.display = 'inline'
+            } else {
+                rulesText.style.display = 'none'
+            }
+        }
 
+        console.log(gameState.configuration)
+
+        rulesFrame.src = `rules/${gameState.configuration.title.toLowerCase()}.html`
+        rulesCell.append(
+            document.createElement("br"), 
+            document.createElement("br"), 
+            rulesButton
+        )
+    }
+
+    totalCell.textContent = "Total"
+}
+
+window.onload = () => {
+    generateScoresheet(activeGame);
+}

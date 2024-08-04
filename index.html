@@ -1,41 +1,15 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>International Scoresheet</title>
+    <title>Scoresheet</title>
     <link rel="stylesheet" type="text/css" href="style.css"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
     <table id="scoresheet">
-        <thead>
-            <tr>
-                <th rowspan="2">Round</th>
-                <th rowspan="2">Deal</th>
-                <th id="player_header">
-                    <span>
-                        Game: 
-                        <select id="active_game">
-                            <option value="custom" selected>Custom</option>
-                            <option value="international">International</option>
-                            <option value="cambio">Cambio</option>
-                        </select>
-                    </span>
-                    <span>
-                        Players: 
-                        <input type="number" id="player_count" step="1" max="5"/>
-                    </span>
-                    <span>
-                        Rounds: 
-                        <input type="number" id="round_count" value="10" min="1" step="1" max="100"/>
-                    </span>
-                </th>
-            </tr>
-            <tr id="player_header"> 
-                <!-- Dynamically populated with players -->
-            </tr>
-        </thead>
     </table>
-    <div id="rules_text">
+    <div id="rules_text" style="display: none;">
         <h1>Rules</h1>
         <iframe id="rules_frame" scrolling="no" frameborder="no" src=""></iframe>
     </div>
