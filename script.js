@@ -35,10 +35,12 @@ class Game {
 
         this.players = players 
         this.playerCount = 3
-        
         this.rounds = 10
-      
-        this.scores = players.map(_ => Array(this.rounds).map(_ => 0))
+        this.scores = players.map(_ => Array(this.rounds).fill(0))
+    }
+
+    activePlayers() {
+        return this.players.slice(0, this.playerCount)
     }
 
     updateConfiguration(configuration) {
@@ -65,6 +67,7 @@ const GameConfigurations = {
         scoreIncrement=1
     ),
 }
+
 const activeGame = new Game(["Player 1", "Player 2", "Player 3"], GameConfigurations.Custom)
 function createTableCell(textContent=null, header=false) {
     let cell = document.createElement(header ? "th" : "td")
@@ -78,6 +81,8 @@ function generateScoresheet(gameState) {
     // Clear out our existing table
     activeTable.innerHTML = ""
     
+    console.log(gameState)
+
     // Create table header
     let headerRow = activeTable.insertRow(-1)
     
@@ -92,6 +97,38 @@ function generateScoresheet(gameState) {
     playerCountInput.min = gameState.configuration.minPlayerCount
     playerCountInput.max = gameState.configuration.maxPlayerCount
     playerCountInput.value = gameState.playerCount
+    
+    playerCountInput.addEventListener('change', (event) => {
+        const proposed = Number(event.target.value)       
+        if(gameState.configuration.maxPlayerCount < event) {
+            gameState.playerCount = gameState.configuration.maxPlayerCount
+        } else if(gameState.configuration.minPlayerCount > event) {
+            gameState.playerCount = gameState.configuration.minPlayerCount
+        } else {
+            gameState.playerCount = proposed
+        }
+
+        gameState.scores = Array(gameState.playerCount).fill(0).map((v, i) => {
+            let existingScore = gameState.scores[i]
+            if(i < gameState.scores.length) {
+                return existingScore
+            }
+            
+            return Array(gameState.rounds).fill(0)
+        })
+
+        console.log(gameState.scores)
+
+        if(gameState.playerCount > gameState.players.length) {
+            gameState.players = [...Array(gameState.playerCount)].map((_, i) => {
+                if(i < gameState.players.length) return gameState.players[i]
+                
+                return `Player ${i + 1}`
+            })
+        }
+                
+        generateScoresheet(gameState)
+    })
 
     playerHeader.appendChild(playerCountInput)
 
@@ -104,7 +141,7 @@ function generateScoresheet(gameState) {
     let headerSubrow = activeTable.insertRow(-1)
     headerSubrow.id = "player_header"
 
-    let playerCells = gameState.players.map(v => createTableCell(v, header=true))
+    let playerCells = gameState.activePlayers().map(v => createTableCell(v, header=true))
     playerHeader.colSpan = playerCells.length
 
     headerSubrow.append(...playerCells)
@@ -113,35 +150,35 @@ function generateScoresheet(gameState) {
     for(let i = 0; i < gameState.rounds; i++) {
         let newRow = activeTable.insertRow(-1)
         newRow.insertCell(-1).textContent = `${i + 1}`
-        gameState.players.map((_, p) => {
+        gameState.activePlayers().map((_, p) => {
             let scoreCell = newRow.insertCell(-1)
 
             let inputCell = document.createElement("input")
             inputCell.type = "number"
-            // inputCell.value = 0
+            inputCell.value = activeGame.scores[p][i]
             inputCell.step = gameState.configuration.scoreIncrement
             inputCell.className = `player_${p}_score_cell`
             inputCell.id = `player_${p}_score_cell_${i}`
-            inputCell.onchange = (event) => {
+            inputCell.addEventListener('change', (event) => {
                 activeGame.scores[p][i] = Number(event.target.value)
                 document.getElementById(`player_${p}_sum_cell`).textContent = activeGame.scores[
                     p
                 ].reduce((acc, curr) => acc + curr, 0)
-            }
+            })
 
             scoreCell.appendChild(inputCell)
         })
         
-        newRow.insertCell(-1).textContent = gameState.players[i % gameState.players.length]
+        newRow.insertCell(-1).textContent = gameState.activePlayers()[i % gameState.activePlayers().length]
     }
 
     // Configure score total row
     const totalsRow = activeTable.insertRow(-1)
     let totalCell = totalsRow.insertCell(-1)
     
-    gameState.players.map((_, i) => {
+    gameState.activePlayers().map((_, i) => {
         let playerCell = totalsRow.insertCell(-1)
-        playerCell.textContent = 0
+        playerCell.textContent = gameState.scores[i].reduce((acc, curr) => acc + curr, 0)
         playerCell.className = "sum_cell"
         playerCell.id = `player_${i}_sum_cell`
         playerCell.dataset.player = i
@@ -157,11 +194,11 @@ function generateScoresheet(gameState) {
     }))
 
     gameCell.selectedIndex = Object.keys(GameConfigurations).indexOf(gameState.configuration.title)
-    gameCell.onchange = (event) => {
+    gameCell.addEventListener('change', (event) => {
         rulesText.style.display = "none"
         gameState.updateConfiguration(GameConfigurations[event.target.value])
         generateScoresheet(gameState)
-    }
+    })
 
     rulesCell.append(gameCell)
     if(gameState.configuration.hasRules) {
