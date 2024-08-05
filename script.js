@@ -2,41 +2,14 @@ const activeTable = document.getElementById("scoresheet")
 const rulesText = document.getElementById("rules_text")
 const rulesFrame = document.getElementById("rules_frame")
 
-class Player {
-    constructor(name) {
-        self.name = name
-    }
-}
-
-class GameConfig { 
-    constructor(
-        title="",
-        minPlayerCount = 1, 
-        maxPlayerCount = 10, 
-        fixedRounds = false,
-        hasRules = false,
-        scoreIncrement = 1
-    ) {
-        this.title = title
-        this.hasRules = hasRules
-
-        // Relevant for things like International, which go up by 5 minimum each card
-        this.scoreIncrement = scoreIncrement
-        this.fixedRounds = fixedRounds
-
-        this.minPlayerCount = minPlayerCount
-        this.maxPlayerCount = maxPlayerCount
-    }
-}
-
 class Game { 
-    constructor(players, configuration) {
+    constructor(configuration) {
         this.configuration = configuration
-
-        this.players = players 
-        this.playerCount = 3
-        this.rounds = 10
-        this.scores = players.map(_ => Array(this.rounds).fill(0))
+        this.rounds = configuration.rounds
+        this.roundNames = configuration.roundNames || []
+        this.players = Array(configuration.defaultPlayerCount).fill("").map((_, i) => `Player ${i + 1}`)
+        this.playerCount = configuration.defaultPlayerCount
+        this.scores = this.players.map(_ => Array(this.rounds).fill(null))
     }
 
     activePlayers() {
@@ -45,30 +18,69 @@ class Game {
 
     updateConfiguration(configuration) {
         this.configuration = configuration
+        this.rounds = configuration.rounds
+        this.roundNames = configuration.roundNames || []
+        this.updateScores()
+    }
+
+    updateScores() {
+        this.scores = Array(this.playerCount).fill(null).map((v, i) => {
+            let targetLength = Array(this.rounds).fill(null)
+            let existingScore = this.scores[i]
+            if(i < this.scores.length) {
+                return targetLength.map((_, si) => si < existingScore.length ? existingScore[si] : null)
+            }
+            return targetLength            
+        })
+        
+        if(this.playerCount > this.players.length) {
+            this.players = [...Array(this.playerCount)].map((_, i) => {
+                if(i < this.players.length) return this.players[i]
+                
+                return `Player ${i + 1}`
+            })
+        }
     }
 }
 
 const GameConfigurations = {
-    "Custom": new GameConfig("Custom"),
-    "International": new GameConfig(
-        title="International",
-        minPlayerCount=1,
-        maxPlayerCount=5,
-        fixedRounds=true,
-        hasRules=true,
-        scoreIncrement=5
-    ),
-    "Cambio": new GameConfig(
-        title="Cambio",
-        minPlayerCount=3,
-        maxPlayerCount=10,
-        fixedRounds=false,
-        hasRules=true,
-        scoreIncrement=1
-    ),
+    "Custom": {
+        title: "Custom",
+        defaultPlayerCount: 3,
+        minPlayerCount: 1, 
+        maxPlayerCount: 10, 
+        rounds: 10,
+        fixedRounds: false,
+        hasRules: false,
+        scoreIncrement: 1
+    },
+    "International": {
+        title: "International",
+        defaultPlayerCount: 3,
+        minPlayerCount: 3,
+        maxPlayerCount: 5,
+        rounds: 8,
+        roundNames: [
+            "2G (10)", "1G 1R (10)", "2R (10)", "3G (10)", 
+            "2G 1R (10)", "2R 1G (11)", "4G (12)", "3R (12)"
+        ],
+        fixedRounds: true,
+        hasRules: true,
+        scoreIncrement: 5 
+    },
+    "Cambio": {
+        title: "Cambio",
+        defaultPlayerCount: 4,
+        minPlayerCount: 3,
+        maxPlayerCount: 10,
+        rounds: 10,
+        fixedRounds: false,
+        hasRules: true,
+        scoreIncrement: 1   
+    }
 }
 
-const activeGame = new Game(["Player 1", "Player 2", "Player 3"], GameConfigurations.Custom)
+const activeGame = new Game(GameConfigurations.Custom)
 function createTableCell(textContent=null, header=false) {
     let cell = document.createElement(header ? "th" : "td")
     if(textContent) {
@@ -80,8 +92,6 @@ function createTableCell(textContent=null, header=false) {
 function generateScoresheet(gameState) {
     // Clear out our existing table
     activeTable.innerHTML = ""
-    
-    console.log(gameState)
 
     // Create table header
     let headerRow = activeTable.insertRow(-1)
@@ -107,49 +117,67 @@ function generateScoresheet(gameState) {
         } else {
             gameState.playerCount = proposed
         }
-
-        gameState.scores = Array(gameState.playerCount).fill(0).map((v, i) => {
-            let existingScore = gameState.scores[i]
-            if(i < gameState.scores.length) {
-                return existingScore
-            }
-            
-            return Array(gameState.rounds).fill(0)
-        })
-
-        console.log(gameState.scores)
-
-        if(gameState.playerCount > gameState.players.length) {
-            gameState.players = [...Array(gameState.playerCount)].map((_, i) => {
-                if(i < gameState.players.length) return gameState.players[i]
-                
-                return `Player ${i + 1}`
-            })
-        }
-                
+        
+        gameState.updateScores()
         generateScoresheet(gameState)
     })
 
     playerHeader.appendChild(playerCountInput)
 
+    if(!gameState.configuration.fixedRounds) {
+        let removeRowButton = document.createElement("button")
+        removeRowButton.textContent = "Remove Round"
+        removeRowButton.addEventListener('click', (_) => {
+            if(gameState.rounds > 1) {
+                gameState.rounds = gameState.rounds - 1
+                generateScoresheet(gameState)
+            }
+        })
+
+        let addRowButton = document.createElement("button")
+        addRowButton.textContent = "Add Round"
+        addRowButton.addEventListener('click', (_) => {
+            gameState.rounds = gameState.rounds + 1
+            generateScoresheet(gameState)
+        })
+
+        roundHeader.append(
+            document.createElement("br"), 
+            removeRowButton, 
+            addRowButton
+        )
+    }
+
     roundHeader.rowSpan = 2
     dealHeader.rowSpan = 2
     
     headerRow.append(roundHeader, playerHeader, dealHeader)
-
     // Configure player names
     let headerSubrow = activeTable.insertRow(-1)
     headerSubrow.id = "player_header"
+    
+    let playerCells = gameState.activePlayers().map((v, i) => {
+        let playerName = createTableCell(null, header=true)
+        let nameInput = document.createElement("input")
+        nameInput.type = "text"
+        nameInput.value = v
+        nameInput.addEventListener('change', (event) => {
+            activeGame.players[i] = event.target.value
+            Array.from(document.querySelectorAll(`.player_${i}_name`)).forEach(cell => {
+                cell.textContent = event.target.value
+            })
+        })
+        playerName.appendChild(nameInput)
+        return playerName
+    })
 
-    let playerCells = gameState.activePlayers().map(v => createTableCell(v, header=true))
     playerHeader.colSpan = playerCells.length
-
     headerSubrow.append(...playerCells)
     
     // Create game rounds
     for(let i = 0; i < gameState.rounds; i++) {
         let newRow = activeTable.insertRow(-1)
-        newRow.insertCell(-1).textContent = `${i + 1}`
+        newRow.insertCell(-1).textContent = i < gameState.roundNames.length ? gameState.roundNames[i] : `${i + 1}`
         gameState.activePlayers().map((_, p) => {
             let scoreCell = newRow.insertCell(-1)
 
@@ -169,7 +197,11 @@ function generateScoresheet(gameState) {
             scoreCell.appendChild(inputCell)
         })
         
-        newRow.insertCell(-1).textContent = gameState.activePlayers()[i % gameState.activePlayers().length]
+        let dealCell = newRow.insertCell(-1)
+        let activePlayerIndex = i % gameState.activePlayers().length
+
+        dealCell.textContent = gameState.activePlayers()[activePlayerIndex]
+        dealCell.className = `player_${activePlayerIndex}_name`
     }
 
     // Configure score total row
@@ -211,8 +243,6 @@ function generateScoresheet(gameState) {
                 rulesText.style.display = 'none'
             }
         }
-
-        console.log(gameState.configuration)
 
         rulesFrame.src = `rules/${gameState.configuration.title.toLowerCase()}.html`
         rulesCell.append(

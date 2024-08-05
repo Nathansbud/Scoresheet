@@ -18,8 +18,8 @@ th, td {
 }
 
 th input[type="text"], td input[type="text"], td input[type="number"]{
-    text-align: center;
     box-sizing: border-box;
+    text-align: center;
     min-width: 10%;
     max-width: 100%;
     width: 100%;
