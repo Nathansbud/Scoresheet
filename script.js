@@ -161,13 +161,26 @@ function generateScoresheet(gameState) {
         let nameInput = document.createElement("input")
         nameInput.type = "text"
         nameInput.value = v
+
         nameInput.addEventListener('change', (event) => {
             activeGame.players[i] = event.target.value
             Array.from(document.querySelectorAll(`.player_${i}_name`)).forEach(cell => {
                 cell.textContent = event.target.value
             })
         })
+
+        // Clear input when the user clicks to make it easier to edit
+        nameInput.addEventListener('focus', (event) => {
+            nameInput.value = ''
+        })
+
+        // Set name input value to active player value, to reflect change (or lack thereof)
+        nameInput.addEventListener('focusout', (event) => {
+            nameInput.value = activeGame.players[i]
+        })
+        
         playerName.appendChild(nameInput)
+        playerName.className = "input_cell"
         return playerName
     })
 
@@ -180,6 +193,7 @@ function generateScoresheet(gameState) {
         newRow.insertCell(-1).textContent = i < gameState.roundNames.length ? gameState.roundNames[i] : `${i + 1}`
         gameState.activePlayers().map((_, p) => {
             let scoreCell = newRow.insertCell(-1)
+            scoreCell.className = "input_cell"
 
             let inputCell = document.createElement("input")
             inputCell.type = "number"

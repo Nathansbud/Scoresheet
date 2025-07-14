@@ -14,10 +14,10 @@ table#scoresheet {
 }
 
 th, td {
-    border: 1px solid black;    
+    border: 1px solid black;
 }
 
-th input[type="text"], td input[type="text"], td input[type="number"]{
+th input[type="text"], td input[type="text"], td input[type="number"] {
     box-sizing: border-box;
     text-align: center;
     min-width: 10%;
