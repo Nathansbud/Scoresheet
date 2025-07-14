@@ -77,6 +77,17 @@ const GameConfigurations = {
         fixedRounds: false,
         hasRules: true,
         scoreIncrement: 1   
+    },
+    "Hearts": {
+        title: "Hearts",
+        defaultPlayerCount: 4,
+        minPlayerCount: 4,
+        maxPlayerCount: 4,
+        rounds: 10,
+        roundNames: ["Pass Right", "Pass Left", "Pass Across", "No Pass"],
+        fixedRounds: false,
+        hasRules: false,
+        scoreIncrement: 1
     }
 }
 
@@ -190,7 +201,7 @@ function generateScoresheet(gameState) {
     // Create game rounds
     for(let i = 0; i < gameState.rounds; i++) {
         let newRow = activeTable.insertRow(-1)
-        newRow.insertCell(-1).textContent = i < gameState.roundNames.length ? gameState.roundNames[i] : `${i + 1}`
+        newRow.insertCell(-1).textContent = gameState.roundNames.length > 0 ? gameState.roundNames[i % gameState.roundNames.length] : `${i + 1}`
         gameState.activePlayers().map((_, p) => {
             let scoreCell = newRow.insertCell(-1)
             scoreCell.className = "input_cell"
