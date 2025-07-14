@@ -83,7 +83,7 @@ const GameConfigurations = {
         defaultPlayerCount: 4,
         minPlayerCount: 4,
         maxPlayerCount: 4,
-        rounds: 10,
+        rounds: 12,
         roundNames: ["Pass Right", "Pass Left", "Pass Across", "No Pass"],
         fixedRounds: false,
         hasRules: false,
