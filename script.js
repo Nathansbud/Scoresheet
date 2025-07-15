@@ -1,5 +1,6 @@
 const activeTable = document.getElementById("scoresheet")
 const rulesText = document.getElementById("rules_text")
+const closeRules = document.getElementById("close_rules")
 const rulesFrame = document.getElementById("rules_frame")
 
 class Game { 
@@ -20,6 +21,11 @@ class Game {
         this.configuration = configuration
         this.rounds = configuration.rounds
         this.roundNames = configuration.roundNames || []
+
+        if(this.playerCount > this.configuration.maxPlayerCount || this.playerCount < this.configuration.minPlayerCount) {
+            this.playerCount = this.configuration.defaultPlayerCount
+        }
+
         this.updateScores()
     }
 
@@ -43,7 +49,7 @@ class Game {
     }
 }
 
-const GameConfigurations = {
+let GameConfigurations = {
     "Custom": {
         title: "Custom",
         defaultPlayerCount: 3,
@@ -76,7 +82,7 @@ const GameConfigurations = {
         rounds: 10,
         fixedRounds: false,
         hasRules: true,
-        scoreIncrement: 1   
+        scoreIncrement: 1
     },
     "Hearts": {
         title: "Hearts",
@@ -100,6 +106,69 @@ function createTableCell(textContent=null, header=false) {
     return cell
 }
 
+function validateConfiguration(ruleset) {
+    const mutableSchema = {
+        title: "User Custom",
+        defaultPlayerCount: 4,
+        minPlayerCount: 1, 
+        maxPlayerCount: 8, 
+        rounds: 10,
+        roundNames: [],
+        fixedRounds: false,
+        scoreIncrement: 1,
+        hasRules: false,
+        rulesUrl: "",
+        hasDealer: true
+    }
+    
+    const schema = {
+        ...mutableSchema,
+        ...Object.fromEntries(Object.entries(ruleset).filter(([k, v]) => {
+            return k in mutableSchema && typeof v === typeof mutableSchema[k]
+        })),
+    }
+
+    return schema
+}
+
+function uploadConfiguration(configuration) {
+    const validated = validateConfiguration(configuration)
+    if(!(validated.title in GameConfigurations)) { 
+        let newOption = document.createElement("option")
+        
+        newOption.text = validated.title
+        newOption.value = validated.title
+        
+        document.querySelector("#game_selector").append(newOption)
+    }
+
+    GameConfigurations[validated.title] = validated
+    
+    let slugify = validated.title.toLowerCase().replace(/ /g, "-").replace(/[^a-z0-9-]/g, "")
+    localStorage.setItem(`custom-${slugify}`, JSON.stringify(validated))
+    
+    const oldIndex = document.querySelector("#game_selector").selectedIndex
+    const gameSelector = document.querySelector("#game_selector")
+    gameSelector.selectedIndex = Object.keys(GameConfigurations).indexOf(validated.title)
+    
+    // Manually trigger a change event if the selected index hasn't changed
+    if(oldIndex == gameSelector.selectedIndex) {
+        let event = new Event('change')
+        event.target = gameSelector
+        gameSelector.dispatchEvent(event)
+    }
+}
+
+const toggleRules = (_) => {
+    if(rulesText.style.display  == 'none') {
+        rulesText.style.display = 'inline'
+    } else {
+        rulesText.style.display = 'none'
+    }
+}
+
+closeRules.addEventListener('click', toggleRules)
+
 function generateScoresheet(gameState) {
     // Clear out our existing table
     activeTable.innerHTML = ""
@@ -108,9 +177,13 @@ function generateScoresheet(gameState) {
     let headerRow = activeTable.insertRow(-1)
     
     // Create relevant header rows
-    let [roundHeader, playerHeader, dealHeader] = ["Round", "Players: ", "Deal"].map(v => 
+    let [roundHeader, gameHeader, dealHeader] = ["Round", "Game: ", "Deal"].map(v => 
         createTableCell(v, header=true)
     )
+
+    // Create player count header row
+    let playerRow = activeTable.insertRow(-1)
+    let playerHeader = createTableCell("Players: ", header=true)
 
     // Create input for player count
     let playerCountInput = document.createElement("input")
@@ -134,6 +207,7 @@ function generateScoresheet(gameState) {
     })
 
     playerHeader.appendChild(playerCountInput)
+    playerRow.append(playerHeader)
 
     if(!gameState.configuration.fixedRounds) {
         let removeRowButton = document.createElement("button")
@@ -159,10 +233,13 @@ function generateScoresheet(gameState) {
         )
     }
 
-    roundHeader.rowSpan = 2
-    dealHeader.rowSpan = 2
+    roundHeader.rowSpan = 3
+    dealHeader.rowSpan = 3
     
-    headerRow.append(roundHeader, playerHeader, dealHeader)
+    headerRow.append(roundHeader, gameHeader)
+    if(gameState.configuration.hasDealer !== false) headerRow.append(dealHeader)
+    
+    
     // Configure player names
     let headerSubrow = activeTable.insertRow(-1)
     headerSubrow.id = "player_header"
@@ -195,6 +272,7 @@ function generateScoresheet(gameState) {
         return playerName
     })
 
+    gameHeader.colSpan = playerCells.length
     playerHeader.colSpan = playerCells.length
     headerSubrow.append(...playerCells)
     
@@ -222,11 +300,14 @@ function generateScoresheet(gameState) {
             scoreCell.appendChild(inputCell)
         })
         
-        let dealCell = newRow.insertCell(-1)
-        let activePlayerIndex = i % gameState.activePlayers().length
+        // Add deal cell if game has relevant
+        if(gameState.configuration.hasDealer !== false) {
+            let dealCell = newRow.insertCell(-1)
+            let activePlayerIndex = i % gameState.activePlayers().length
 
-        dealCell.textContent = gameState.activePlayers()[activePlayerIndex]
-        dealCell.className = `player_${activePlayerIndex}_name`
+            dealCell.textContent = gameState.activePlayers()[activePlayerIndex]
+            dealCell.className = `player_${activePlayerIndex}_name`
+        }
     }
 
     // Configure score total row
@@ -241,7 +322,14 @@ function generateScoresheet(gameState) {
         playerCell.dataset.player = i
     })
     
-    let rulesCell = totalsRow.insertCell(-1)
+    // Populate custom configs (if any exist)
+    let customGames = Object.keys(localStorage).filter(v => v.startsWith("custom-"))
+    customGames.forEach(v => {
+        let game = JSON.parse(localStorage.getItem(v))
+        GameConfigurations[game.title] = game
+    })
+    
+    // Add game selector to game row
     let gameCell = document.createElement("select")
     gameCell.append(...Object.keys(GameConfigurations).map(v => {
         let opt = document.createElement("option")
@@ -249,34 +337,66 @@ function generateScoresheet(gameState) {
         opt.value = v
         return opt
     }))
-
+    
     gameCell.selectedIndex = Object.keys(GameConfigurations).indexOf(gameState.configuration.title)
+    gameCell.id = "game_selector"
     gameCell.addEventListener('change', (event) => {
         rulesText.style.display = "none"
         gameState.updateConfiguration(GameConfigurations[event.target.value])
         generateScoresheet(gameState)
     })
 
-    rulesCell.append(gameCell)
+    gameHeader.append(gameCell)
+
+    const uploadButton = document.createElement("input")
+    uploadButton.id = "upload_button"
+    uploadButton.type = "file"
+    uploadButton.accept = ".json"
+    uploadButton.style.opacity = 0
+    uploadButton.style.width = 0
+    uploadButton.disabled = true
+
+    uploadButton.onchange = (event) => {
+        let file = event.target.files[0]
+        let reader = new FileReader()
+        reader.onload = (event) => {
+            let rules = JSON.parse(event.target.result)
+            uploadConfiguration(rules)
+        }
+
+        reader.readAsText(file)
+    }
+    
+    // Create a pseudo button to trigger the file upload (as file upload style is ugly)
+    const psuedoButton = document.createElement("button")
+    psuedoButton.textContent = "+"
+    psuedoButton.onclick = (_) => { 
+        uploadButton.removeAttribute('disabled')
+        uploadButton.click()
+        uploadButton.setAttribute('disabled', true)
+    }
+    
+    const helpTooltip = document.createElement("a")
+    helpTooltip.href = "https://github.com/Nathansbud/scoresheet/blob/main/README.md"
+    helpTooltip.innerHTML = "<sup>?</sup>"
+    
+    console.log(gameState.configuration)
     if(gameState.configuration.hasRules) {
         let rulesButton = document.createElement("button")
         rulesButton.textContent = "Rules"
-        rulesButton.onclick = (_) => {
-            if(rulesText.style.display  == 'none') {
-                rulesText.style.display = 'inline'
-            } else {
-                rulesText.style.display = 'none'
-            }
+        rulesButton.addEventListener('click', toggleRules)
+        
+        if(!gameState.configuration.rulesUrl) {
+            rulesFrame.src = `rules/${gameState.configuration.title.toLowerCase()}.html`
+        } else {
+            console.log(gameState.configuration.rulesUrl)
+            rulesFrame.src = gameState.configuration.rulesUrl
         }
 
-        rulesFrame.src = `rules/${gameState.configuration.title.toLowerCase()}.html`
-        rulesCell.append(
-            document.createElement("br"), 
-            document.createElement("br"), 
-            rulesButton
-        )
+        gameHeader.append(rulesButton)
     }
 
+    gameHeader.append(psuedoButton, uploadButton, helpTooltip)
     totalCell.textContent = "Total"
 }
 

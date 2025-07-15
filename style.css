@@ -15,6 +15,12 @@ table#scoresheet {
 
 th, td {
     border: 1px solid black;
+    margin: 10px;
+}
+
+a {
+    text-decoration: none;
+    color: royalblue;
 }
 
 th input[type="text"], td input[type="text"], td input[type="number"] {
@@ -36,7 +42,7 @@ th input[type="text"], td input[type="text"], td input[type="number"] {
     top: 2.5%;
     bottom: 2.5%;
     height: 92.5%;
-    width: 75%;
+    width: 90%;
     z-index: 1;
     padding: 0px 10px;
     border: 2px solid black;
@@ -49,8 +55,12 @@ iframe {
     width: 100%; 
 }
 
-#player_header * {
-    /* margin-right: 50px; */
+#close_rules {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 h1 {

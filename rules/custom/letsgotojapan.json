@@ -1,0 +1,25 @@
+{
+    "title": "Let's Go to Japan",
+    "defaultPlayerCount": 4,
+    "minPlayerCount": 1,
+    "maxPlayerCount": 4,
+    "rounds": 11,
+    "roundNames": [
+        "Monday", 
+        "Tuesday", 
+        "Wednesday", 
+        "Thursday", 
+        "Friday", 
+        "Saturday", 
+        "Sunday", 
+        "Mood", 
+        "Icons", 
+        "Trains", 
+        "Tokens"
+    ],
+    "fixedRounds": true,
+    "hasRules": true,
+    "rulesUrl": "https://dork.nathansbud-cors.workers.dev/?https://www.alderac.com/wp-content/uploads/2023/03/LetsGoToJapan_Influencer_EN_1P_Rulebook_FINAL-copy.pdf",
+    "scoreIncrement": 1,
+    "hasDealer": false
+}
