@@ -118,7 +118,8 @@ function validateConfiguration(ruleset) {
         scoreIncrement: 1,
         hasRules: false,
         rulesUrl: "",
-        hasDealer: true
+        hasDealer: true,
+        roundLabel: "Round"
     }
     
     const schema = {
@@ -133,13 +134,15 @@ function validateConfiguration(ruleset) {
 
 function uploadConfiguration(configuration) {
     const validated = validateConfiguration(configuration)
+    const gameSelector = document.querySelector("#game_selector")
+
     if(!(validated.title in GameConfigurations)) { 
         let newOption = document.createElement("option")
         
         newOption.text = validated.title
         newOption.value = validated.title
         
-        document.querySelector("#game_selector").append(newOption)
+        gameSelector.append(newOption)
     }
 
     GameConfigurations[validated.title] = validated
@@ -147,16 +150,15 @@ function uploadConfiguration(configuration) {
     let slugify = validated.title.toLowerCase().replace(/ /g, "-").replace(/[^a-z0-9-]/g, "")
     localStorage.setItem(`custom-${slugify}`, JSON.stringify(validated))
     
-    const oldIndex = document.querySelector("#game_selector").selectedIndex
-    const gameSelector = document.querySelector("#game_selector")
     gameSelector.selectedIndex = Object.keys(GameConfigurations).indexOf(validated.title)
-    
-    // Manually trigger a change event if the selected index hasn't changed
-    if(oldIndex == gameSelector.selectedIndex) {
-        let event = new Event('change')
-        event.target = gameSelector
-        gameSelector.dispatchEvent(event)
-    }
+    gameSelector.value = validated.title
+
+    console.log('swag')
+
+    // // Manually trigger a change event regardless of if index changed
+    let event = new Event('change')
+    gameSelector.dispatchEvent(event)
+    console.log(gameSelector.onchange)
 }
 
 const toggleRules = (_) => {
@@ -177,7 +179,7 @@ function generateScoresheet(gameState) {
     let headerRow = activeTable.insertRow(-1)
     
     // Create relevant header rows
-    let [roundHeader, gameHeader, dealHeader] = ["Round", "Game: ", "Deal"].map(v => 
+    let [roundHeader, gameHeader, dealHeader] = [gameState.configuration.roundLabel ?? "Round", "Game: ", "Deal"].map(v => 
         createTableCell(v, header=true)
     )
 
@@ -380,7 +382,6 @@ function generateScoresheet(gameState) {
     helpTooltip.href = "https://github.com/Nathansbud/scoresheet/blob/main/README.md"
     helpTooltip.innerHTML = "<sup>?</sup>"
     
-    console.log(gameState.configuration)
     if(gameState.configuration.hasRules) {
         let rulesButton = document.createElement("button")
         rulesButton.textContent = "Rules"

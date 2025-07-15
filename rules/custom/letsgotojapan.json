@@ -17,6 +17,7 @@
         "Trains", 
         "Tokens"
     ],
+    "roundLabel": "Scoring Criteria",
     "fixedRounds": true,
     "hasRules": true,
     "rulesUrl": "https://dork.nathansbud-cors.workers.dev/?https://www.alderac.com/wp-content/uploads/2023/03/LetsGoToJapan_Influencer_EN_1P_Rulebook_FINAL-copy.pdf",

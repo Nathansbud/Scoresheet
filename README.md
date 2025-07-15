@@ -32,6 +32,8 @@ While most card games are best-served by a round-dealer structure (as they have 
         "Trains", 
         "Tokens"
     ],
+    // Optional: Define the header of the "rounds" area (e.g. Scoring Criteria, Categories, ...)
+    "roundLabel": "Scoring Criteria",  
     // Controls whether the add/remove round controls appear
     "fixedRounds": true,
     "scoreIncrement": 1,
