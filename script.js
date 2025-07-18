@@ -229,7 +229,7 @@ function generateScoresheet(gameState) {
 
     if(!gameState.configuration.fixedRounds) {
         let removeRowButton = document.createElement("button")
-        removeRowButton.textContent = "Remove Round"
+        removeRowButton.textContent = "-"
         removeRowButton.addEventListener('click', (_) => {
             if(gameState.rounds > 1) {
                 gameState.rounds = gameState.rounds - 1
@@ -238,7 +238,7 @@ function generateScoresheet(gameState) {
         })
 
         let addRowButton = document.createElement("button")
-        addRowButton.textContent = "Add Round"
+        addRowButton.textContent = "+"
         addRowButton.addEventListener('click', (_) => {
             gameState.rounds = gameState.rounds + 1
             generateScoresheet(gameState)
@@ -404,7 +404,7 @@ function generateScoresheet(gameState) {
     const psuedoButton = document.createElement("button")
     psuedoButton.textContent = "+"
     psuedoButton.className = "upload_button"
-    
+
     psuedoButton.onclick = (_) => { 
         uploadButton.removeAttribute('disabled')
         uploadButton.click()
