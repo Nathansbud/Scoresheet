@@ -18,6 +18,10 @@ th, td {
     margin: 10px;
 }
 
+th button {
+    margin-left: 5px;
+}
+
 a {
     text-decoration: none;
     color: royalblue;

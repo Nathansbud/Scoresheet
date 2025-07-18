@@ -11,6 +11,7 @@ class Game {
         this.players = Array(configuration.defaultPlayerCount).fill("").map((_, i) => `Player ${i + 1}`)
         this.playerCount = configuration.defaultPlayerCount
         this.scores = this.players.map(_ => Array(this.rounds).fill(null))
+        this.dealOffset = 0
     }
 
     activePlayers() {
@@ -195,20 +196,35 @@ function generateScoresheet(gameState) {
     playerCountInput.value = gameState.playerCount
     
     playerCountInput.addEventListener('change', (event) => {
-        const proposed = Number(event.target.value)       
+        const proposed = Number(event.target.value)
         if(gameState.configuration.maxPlayerCount < event) {
             gameState.playerCount = gameState.configuration.maxPlayerCount
         } else if(gameState.configuration.minPlayerCount > event) {
             gameState.playerCount = gameState.configuration.minPlayerCount
         } else {
             gameState.playerCount = proposed
+            gameState.dealOffset = 0
         }
         
         gameState.updateScores()
         generateScoresheet(gameState)
     })
 
-    playerHeader.appendChild(playerCountInput)
+    const resetButton = document.createElement("button")
+    resetButton.textContent = "Reset Scores"
+    resetButton.addEventListener('click', (_) => {
+        document.querySelectorAll(".score_cell").forEach(cell => {
+            cell.value = null
+        })
+
+        gameState.scores = gameState.scores.map(playerColumn => {
+            return playerColumn.map(_ => null)
+        })
+
+        generateScoresheet(gameState)
+    })
+    
+    playerHeader.append(playerCountInput, resetButton)
     playerRow.append(playerHeader)
 
     if(!gameState.configuration.fixedRounds) {
@@ -235,12 +251,27 @@ function generateScoresheet(gameState) {
         )
     }
 
+    let cycleDealerButton = document.createElement("button")
+    cycleDealerButton.textContent = "→"
+
+    cycleDealerButton.addEventListener('click', (_) => {
+        gameState.dealOffset = (gameState.dealOffset - 1) % gameState.playerCount
+        
+        const activePlayers = gameState.activePlayers()
+        for(let i = 0; i < gameState.playerCount; i++) {
+            Array.from(document.querySelectorAll(`.player_${i}_name`)).forEach(cell => {            
+                cell.textContent = activePlayers[(i - gameState.dealOffset) % activePlayers.length]
+            })
+        }
+    })
+    
+    dealHeader.append(document.createElement('br'), cycleDealerButton)
+
     roundHeader.rowSpan = 3
     dealHeader.rowSpan = 3
     
     headerRow.append(roundHeader, gameHeader)
     if(gameState.configuration.hasDealer !== false) headerRow.append(dealHeader)
-    
     
     // Configure player names
     let headerSubrow = activeTable.insertRow(-1)
@@ -251,10 +282,10 @@ function generateScoresheet(gameState) {
         let nameInput = document.createElement("input")
         nameInput.type = "text"
         nameInput.value = v
-
+        
         nameInput.addEventListener('change', (event) => {
             activeGame.players[i] = event.target.value
-            Array.from(document.querySelectorAll(`.player_${i}_name`)).forEach(cell => {
+            Array.from(document.querySelectorAll(`.player_${(i + activeGame.dealOffset) % activeGame.playerCount}_name`)).forEach(cell => {
                 cell.textContent = event.target.value
             })
         })
@@ -290,7 +321,7 @@ function generateScoresheet(gameState) {
             inputCell.type = "number"
             inputCell.value = activeGame.scores[p][i]
             inputCell.step = gameState.configuration.scoreIncrement
-            inputCell.className = `player_${p}_score_cell`
+            inputCell.className = `player_${p}_score_cell score_cell`
             inputCell.id = `player_${p}_score_cell_${i}`
             inputCell.addEventListener('change', (event) => {
                 activeGame.scores[p][i] = Number(event.target.value)
@@ -372,6 +403,8 @@ function generateScoresheet(gameState) {
     // Create a pseudo button to trigger the file upload (as file upload style is ugly)
     const psuedoButton = document.createElement("button")
     psuedoButton.textContent = "+"
+    psuedoButton.className = "upload_button"
+    
     psuedoButton.onclick = (_) => { 
         uploadButton.removeAttribute('disabled')
         uploadButton.click()
