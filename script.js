@@ -192,7 +192,7 @@ function retrieveGame(activeGame) {
         const timeElapsed = Date.now() - timestamp
         
         // If game record is under an hour old, use this instead
-        if(timeElapsed < 10000) {
+        if(timeElapsed < 1000 * 60 * 60) {
             return Game.from(storedGame)
         }       
     }
