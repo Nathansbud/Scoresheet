@@ -3,7 +3,7 @@ const rulesText = document.getElementById("rules_text")
 const closeRules = document.getElementById("close_rules")
 const rulesFrame = document.getElementById("rules_frame")
 
-class Game { 
+class Game {
     constructor(configuration) {
         this.configuration = configuration
         this.rounds = configuration.rounds
@@ -12,6 +12,17 @@ class Game {
         this.playerCount = configuration.defaultPlayerCount
         this.scores = this.players.map(_ => Array(this.rounds).fill(null))
         this.dealOffset = 0
+    }
+
+    static from(gameJSON) {
+        const storedGame = new Game(gameJSON.configuration)
+        storedGame.rounds = gameJSON.rounds
+        storedGame.roundNames = gameJSON.roundNames
+        storedGame.players = gameJSON.players
+        storedGame.playerCount = gameJSON.playerCount
+        storedGame.scores = gameJSON.scores
+        storedGame.dealOffset = gameJSON.dealOffset
+        return storedGame
     }
 
     activePlayers() {
@@ -98,7 +109,9 @@ let GameConfigurations = {
     }
 }
 
-const activeGame = new Game(GameConfigurations.Custom)
+// Initialize the game with a default configuration
+let activeGame = new Game(GameConfigurations.Custom)
+
 function createTableCell(textContent=null, header=false) {
     let cell = document.createElement(header ? "th" : "td")
     if(textContent) {
@@ -159,7 +172,32 @@ function uploadConfiguration(configuration) {
     // // Manually trigger a change event regardless of if index changed
     let event = new Event('change')
     gameSelector.dispatchEvent(event)
-    console.log(gameSelector.onchange)
+}
+
+function serializeGame() {
+    localStorage.setItem(
+        "stored-game", 
+        JSON.stringify({
+            timestamp: Date.now(),
+            game: activeGame
+        })
+    )
+}
+
+function retrieveGame(activeGame) {
+    const gameRecord = localStorage.getItem("stored-game")
+    if(gameRecord) {
+        const parsedGame = JSON.parse(gameRecord)
+        const [timestamp, storedGame] = [parsedGame.timestamp, parsedGame.game]
+        const timeElapsed = Date.now() - timestamp
+        
+        // If game record is under an hour old, use this instead
+        if(timeElapsed < 10000) {
+            return Game.from(storedGame)
+        }       
+    }
+
+    return activeGame
 }
 
 const toggleRules = (_) => {
@@ -207,6 +245,7 @@ function generateScoresheet(gameState) {
         }
         
         gameState.updateScores()
+        serializeGame()
         generateScoresheet(gameState)
     })
 
@@ -220,7 +259,8 @@ function generateScoresheet(gameState) {
         gameState.scores = gameState.scores.map(playerColumn => {
             return playerColumn.map(_ => null)
         })
-
+        
+        serializeGame()
         generateScoresheet(gameState)
     })
     
@@ -233,6 +273,7 @@ function generateScoresheet(gameState) {
         removeRowButton.addEventListener('click', (_) => {
             if(gameState.rounds > 1) {
                 gameState.rounds = gameState.rounds - 1
+                serializeGame()
                 generateScoresheet(gameState)
             }
         })
@@ -241,6 +282,7 @@ function generateScoresheet(gameState) {
         addRowButton.textContent = "+"
         addRowButton.addEventListener('click', (_) => {
             gameState.rounds = gameState.rounds + 1
+            serializeGame()
             generateScoresheet(gameState)
         })
 
@@ -298,6 +340,7 @@ function generateScoresheet(gameState) {
         // Set name input value to active player value, to reflect change (or lack thereof)
         nameInput.addEventListener('focusout', (event) => {
             nameInput.value = activeGame.players[i]
+            serializeGame()
         })
         
         playerName.appendChild(nameInput)
@@ -328,6 +371,9 @@ function generateScoresheet(gameState) {
                 document.getElementById(`player_${p}_sum_cell`).textContent = activeGame.scores[
                     p
                 ].reduce((acc, curr) => acc + curr, 0)
+
+                // Store the scores in local storage
+                serializeGame()
             })
 
             scoreCell.appendChild(inputCell)
@@ -435,5 +481,9 @@ function generateScoresheet(gameState) {
 }
 
 window.onload = () => {
-    generateScoresheet(activeGame);
+    // Load the game from local storage if it exists, and serialize to ensure timestamp isn't stale
+    activeGame = retrieveGame(activeGame)
+    serializeGame()   
+
+    generateScoresheet(activeGame)
 }
