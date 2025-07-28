@@ -422,6 +422,7 @@ function generateScoresheet(gameState) {
     gameCell.addEventListener('change', (event) => {
         rulesText.style.display = "none"
         gameState.updateConfiguration(GameConfigurations[event.target.value])
+        serializeGame()
         generateScoresheet(gameState)
     })
 
