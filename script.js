@@ -191,8 +191,8 @@ function retrieveGame(activeGame) {
         const [timestamp, storedGame] = [parsedGame.timestamp, parsedGame.game]
         const timeElapsed = Date.now() - timestamp
         
-        // If game record is under an hour old, use this instead
-        if(timeElapsed < 1000 * 60 * 60) {
+        // If a game record exists less than a day old, repopulate assuming that a game is being continued
+        if(timeElapsed < 1000 * 60 * 60 * 24) {
             return Game.from(storedGame)
         }       
     }
